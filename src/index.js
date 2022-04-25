@@ -7,6 +7,8 @@ import { app } from './App';
 
 pg.defaults.parseInt8 = true;
 
+process.env.PWD = process.cwd();
+
 const { port } = app
   .listen(process.env.PORT || 3000, () => {
     console.log(`Express server is running on port: ${port}`);

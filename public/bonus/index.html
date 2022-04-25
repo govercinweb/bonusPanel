@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title><website-title></title>
+        <meta name="description" content="Betmarino bonus talep formu ile sizlerde hemen bonuslardan fayadalanın">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="../static/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+        <link rel="stylesheet" href="../bonus/style.css">
+        <script src="../static/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+        <script src="../static/js/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+        <script src="../static/js/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+        <script src="../static/js/sweetalert2.min.js"></script>
+        <link rel="stylesheet" href="../static/css/sweetalert2.min.css">
+        
+
+            
+    </head>
+    <body>
+        <div class="col-sm-12" style="margin-top:5px;">
+            <center>
+                <a style="margin-top:5px; height: 0px;display: block;" href="">
+                    <img src="<website-logo-link>" class="logo">
+                </a>
+            </center>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6 col-xs-12 d-flex justify-content-center">
+                    <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title" style="color:white">Bonus Talep Et</h5>
+                                <div class="row">
+                                    <div class="col-md-6 col-xs-12 mt-1">
+                                        <input type="text" class="form-control" name="username" required="" placeholder="Kullanıcı Adınız">
+                                        <input type="hidden" name="xtalep" value="1">
+                                    </div>
+                                    <div class="col-md-6 col-xs-12 mt-1">
+                                        <select id="types" class="form-control" required="" name="bonus_id" onchange="showOption(this);">
+                                            <option value="0" selected="selected">Seçiniz...</option>
+                                        </select>                                
+                                    </div>
+
+                                </div>
+                                <button type="submit" class="btn btn-warning btn-block mt-2 custom-btn btnRequest">Talep Et</button>
+                            </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-xs-12  d-flex justify-content-center">
+                    <div class="card">
+                        <input type="hidden" name="xtalepler">
+                        <div class="card-body">
+                            <h5 class="card-title" style="color:white">Bonus Sorgula</h5>
+                            <div class="row">
+                                <div class="col-md-12 col-xs-12 mt-1">
+                                    <input type="text" class="form-control username" name="username2" required="" placeholder="Kullanıcı Adınız">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-warning btn-block mt-2 custom-btn btnSorgula" onclick="sonucSorgula()">Sonuç Sorgula</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-12" style="margin-top:5px;"></div> 
+            <div class="col-md-6 col-sm-12" id="bonus_aciklama" style="margin-top:10px;margin-bottom:10px;color: #fff;"></div>    
+        </div>
+
+        <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+        <script src="../admin/js/menuToogle.js"></script>
+        <script>
+            //// let host = "http://localhost:3000";
+            let host = "https://betmarino-last-end.herokuapp.com";
+            let bonuses = document.querySelector('select[name="bonus_id"]');
+            let bonusExplainList = {};
+            let username = "";
+            
+            //Get bonus list
+            fetch(`${host}/bonus/list/active`,{
+                    method:'GET',
+                    headers: {
+                        'content-type':'application/json'
+                    }
+                }).then(resp=>resp.json()) 
+            .then(resp => {
+                resp.forEach(({id, bonus_text, bonus_content, bonus_status_id}) => { 
+                let createBonusOpt = document.createElement('option');
+                createBonusOpt.id = id;
+                createBonusOpt.value = id;
+                createBonusOpt.text = bonus_text;
+                bonuses.appendChild(createBonusOpt);
+                bonusExplainList[id] = bonus_content;
+                });
+            });
+
+            const showOption = (s) => {
+                document.querySelector("#bonus_aciklama").innerHTML = bonusExplainList[s[s.selectedIndex].id];
+            }
+
+            // talep et
+            const btnRequest = document.querySelector(".btnRequest");
+            btnRequest.addEventListener('click', () => {
+                username = document.querySelector('input[name="username"]').value;
+                let bonusId = bonuses[bonuses.selectedIndex].id;
+                if(bonusId != 0){
+                    fetch(`${host}/bonus/request/${bonusId}`,{
+                        method:'POST',
+                        headers: {
+                            'content-type':'application/json'
+                        },
+                        body: JSON.stringify({
+                            username,
+                        })
+                    }).then(resp => resp.json())
+                    .then(resp => {
+                        if(resp.error && resp.error.code == 401){
+                            Swal.fire({
+                                title: 'Sistemsel Süreç!',
+                                text: 'İsteğiniz gerçekleştirilememiştir. Daha önceki işleminiz red edilmiş ya da beklemededir.',
+                                icon: 'success',
+                                confirmButtonText: 'Tamam'
+                            })
+                        }else{
+                            // swal will be added here
+                            Swal.fire({
+                                title: 'Onaylandı!',
+                                text: 'İsteğiniz başarılı bir şekilde iletilmiştir.',
+                                icon: 'success',
+                                confirmButtonText: 'Tamam'
+                            })
+                        }
+                        
+                        document.querySelector('input[name="username"]').value = "";
+                        document.querySelector('select[name="bonus_id"]').selectedIndex = 0;
+                        document.querySelector('input[name="username2"]').value = "";
+                        document.querySelector('#bonus_aciklama').innerHTML = "";
+                        // window.location.reload();
+                    })
+                }else{
+                    Swal.fire({
+                        title: 'Bonus Seçim Uyarısı!',
+                        text: 'Lütfen bonus talep isteğinizi boş bırakmayınız.',
+                        icon: 'error',
+                        confirmButtonText: 'Tamam'
+                    })
+                }
+                
+            });
+            
+            const sonucSorgula = () => {
+                let usernameSorgula = document.querySelector('input[name="username2"]').value;
+                if(usernameSorgula){
+                    document.location.href = "../bonus/index_username.html?username="+usernameSorgula;   
+                }
+            }
+        </script>
+    </body>
+</html>

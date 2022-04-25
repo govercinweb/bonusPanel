@@ -4,3 +4,6 @@ export * from './blacklist';
 export * from './message';
 export * from './bonus_request';
 export * from './bonus';
+export * from './fileupload';
+export * from './settings';
+export * from './home';

@@ -12,7 +12,7 @@ const selectBonusRequestSql = `select *, request_status as status_id,
 
 const searchRequestListByUserName = async (username) => {
   const { rows } = await DB.executeQuery(
-    `${selectBonusRequestSql} where user_name like $1 order by bonus_requests.create_date desc`,
+    `${selectBonusRequestSql} where user_name like $1 and bonus_requests.user_name NOT IN (select user_name from blocked_users where user_status = 20) order by bonus_requests.create_date desc`,
     [`%${username}%`]
   );
 
@@ -21,7 +21,7 @@ const searchRequestListByUserName = async (username) => {
 
 const getWaitingRequestList = async () => {
   const { rows } = await DB.executeQuery(
-    `${selectBonusRequestSql} where request_status = $1 order by bonus_requests.create_date desc`,
+    `${selectBonusRequestSql} where request_status = $1 and bonus_requests.user_name NOT IN (select user_name from blocked_users where user_status = 20) order by bonus_requests.create_date desc`,
     [BonusRequestStatus.WAITING]
   );
 
@@ -30,7 +30,7 @@ const getWaitingRequestList = async () => {
 
 const getApprovedRequestList = async () => {
   const { rows } = await DB.executeQuery(
-    `${selectBonusRequestSql} where request_status = $1 order by bonus_requests.create_date desc`,
+    `${selectBonusRequestSql} where request_status = $1 and bonus_requests.user_name NOT IN (select user_name from blocked_users where user_status = 20) order by bonus_requests.create_date desc`,
     [BonusRequestStatus.ACCEPTED]
   );
 
@@ -39,7 +39,7 @@ const getApprovedRequestList = async () => {
 
 const getRejectedRequestList = async () => {
   const { rows } = await DB.executeQuery(
-    `${selectBonusRequestSql} where request_status = $1 order by bonus_requests.create_date desc`,
+    `${selectBonusRequestSql} where request_status = $1 and bonus_requests.user_name NOT IN (select user_name from blocked_users where user_status = 20) order by bonus_requests.create_date desc`,
     [BonusRequestStatus.REJECTED]
   );
 
@@ -47,11 +47,27 @@ const getRejectedRequestList = async () => {
 };
 
 const getRequestsByUserName = async (username) => {
-  const { rows } = await DB.executeQuery(
+  const client = DB.getClient();
+  await client.connect();
+
+  const {
+    rows: [{ count }],
+  } = await client.executeQuery(
+    'select count(*) from blocked_users where user_name = $1 and user_status = $2',
+    [username, BlockedUserStatus.DEACTIVE]
+  );
+
+  if (count > 0) {
+    await client.rollback();
+    throw new RequestError(401, 'This username is blocked');
+  }
+
+  const { rows } = await client.executeQuery(
     `${selectBonusRequestSql} where user_name = $1 order by bonus_requests.create_date desc limit 10`,
     [username]
   );
 
+  await client.end();
   return rows;
 };
 
@@ -67,6 +83,16 @@ const addBonusRequest = async (userName, bonusId) => {
   if (count > 0) {
     await client.rollback();
     throw new RequestError(401, 'This username is blocked');
+  }
+  const {
+    rows: [{ count: waitingCount }],
+  } = await client.executeQuery(
+    'select count(*) from bonus_requests where user_name = $1 and request_status = $2',
+    [userName, BonusRequestStatus.WAITING]
+  );
+  if (waitingCount > 0) {
+    await client.rollback();
+    throw new RequestError(401, 'You have waiting bonus requests in place');
   }
   await client.executeQuery(
     `

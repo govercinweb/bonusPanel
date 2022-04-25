@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title><website-title></title>
+        <meta name="description" content="Betmarino bonus talep formu ile sizlerde hemen bonuslardan fayadalanın">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="../static/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+        <link rel="stylesheet" href="../bonus/style.css">
+        <script src="../static/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+        <script src="../static/js/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+        <script src="../static/js/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+        <script src="../static/js/sweetalert2.min.js"></script>
+        <link rel="stylesheet" href="../static/css/sweetalert2.min.css">
+    </head>
+    <body>
+
+        <div class="col-sm-12" style="margin-top:5px;">
+            <center>
+                <a style="margin-top:5px; height: 0px;display: block;" href="../bonus/index.html">
+                    <img src="<website-logo-link>" class="logo">
+                </a>
+            </center>
+        </div>
+        <div class="container __web-inspector-hide-shortcut__" style="display: block;">
+            <div class="row">
+                <div class="col-12 d-flex justify-content-center namecard">
+                    <div class="card" style="background-color: white;">
+                        <div class="card-header text-center">
+                            <h4 style="color:#ff6000;font-weight:bold">Başvuru Durumu (Son 10 başvuru)</h4>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="row">
+                                <div class="table-responsive-md w-100">
+                                    <table class="col-sm-12 ">
+                                        <thead>
+                                            <tr>
+                                                <th>Başvuru No</th>
+                                                <th>Kullanıcı Adı</th>
+                                                <th>Promosyon</th>
+                                                <th>B. Tarihi</th>
+                                                <th>Açıklama</th>
+                                                <th>SONUÇ</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="request_list">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <hr>                
+                        <hr>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="../static/static/jquery-3.5.1.min.js"></script>
+        
+        <script>
+            let host = "https://betmarino-last-end.herokuapp.com";
+            let url = document.location.href;
+            let params = (new URL(url)).searchParams;
+            let username = params.get('username');
+            let request_list = document.querySelector('#request_list');
+           
+            if(username){
+                fetch(`${host}/bonus/requests/list?username=${username}`,{
+                    method:'GET',
+                    headers: {
+                        'content-type':'application/json'
+                    }
+                }).then(resp => resp.json())
+                .then(resp => {
+                    if(resp.error && resp.error.code == 401){
+                        Swal.fire({
+                            title: 'Kullanıcı Engelleme!',
+                            text: 'İsteğiniz gerçekleştirilememiştir. Kullanıcı sistem üzerinden engellenmiştir.',
+                            icon: 'success',
+                            confirmButtonText: 'Tamam'
+                        })
+                    }else{
+                        resp.forEach(({id, user_name, bonus_text, create_date, status, note, message}) => {
+                            let newRow = document.createElement('tr');
+                            newRow.id = id;
+
+                            let idCell = document.createElement('td');
+                            idCell.innerHTML = id;
+                            newRow.appendChild(idCell); // The first cell
+
+                            let user_nameCell = document.createElement('td');
+                            user_nameCell.innerHTML = user_name;
+                            newRow.appendChild(user_nameCell); // The first cell
+
+                            let bonus_textCell = document.createElement('td');
+                            bonus_textCell.innerHTML = bonus_text;
+                            newRow.appendChild(bonus_textCell); // The first cell
+
+                            
+                            let create_dateCell = document.createElement('td');
+                            create_dateCell.innerHTML = create_date;
+                            newRow.appendChild(create_dateCell); // The first cell
+
+                            let process_dateCell = document.createElement('td');
+                            process_dateCell.innerHTML = message != null ? message : "";
+                            newRow.appendChild(process_dateCell); // The first cell
+
+                            let statusCell = document.createElement('td');
+                            let durum = status == "WAITING" ? "Bekliyor" : status == "ACCEPTED" ? "Onaylandı Bilgisi Gönderildi": "Red Edildi";
+                            statusCell.innerHTML = "<span class='badge badge-info'>"+durum+"</span>";
+                            newRow.appendChild(statusCell); // The first cell
+                            request_list.appendChild(newRow);
+                        })
+                    }
+                })
+            }
+        </script>
+        <style>
+            th {
+                font-size: 14px;
+                color: #ff6000;
+            }
+        </style>
+    </body>
+</html>

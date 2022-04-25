@@ -46,7 +46,7 @@ userRouteHandler.post('/create', adminRoute, async (req, res) => {
 
 userRouteHandler.post('/update', protectedRoute, async (req, res) => {
   const { loginName, password, username, userSurname, email, phone } = req.body;
-  validateFields({ loginName, password, username, userSurname });
+  validateFields({ loginName, username, userSurname });
   const { id } = req.loggedInUser;
   await User.updateUserProfile(
     id,

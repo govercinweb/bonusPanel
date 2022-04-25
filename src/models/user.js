@@ -82,10 +82,17 @@ const updateUserProfile = async (
   email,
   phone
 ) => {
-  await DB.executeQuery(
-    'update users set login_name = $1, password = $2, user_name = $3, user_surname = $4, email = $5, phone = $6, update_date = current_timestamp where id = $7',
-    [loginName, password, username, userSurname, email, phone, id]
-  );
+  if (password) {
+    await DB.executeQuery(
+      'update users set login_name = $1, password = $2, user_name = $3, user_surname = $4, email = $5, phone = $6, update_date = current_timestamp where id = $7',
+      [loginName, password, username, userSurname, email, phone, id]
+    );
+  } else {
+    await DB.executeQuery(
+      'update users set login_name = $1, user_name = $2, user_surname = $3, email = $4, phone = $5, update_date = current_timestamp where id = $6',
+      [loginName, username, userSurname, email, phone, id]
+    );
+  }
 };
 
 const removeUser = async (id) => {
